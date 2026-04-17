@@ -84,8 +84,9 @@ class ProxyHandler(BaseHTTPRequestHandler):
     
     def _serve_static(self):
         try:
-            # 移除前导斜杠
-            file_path = self.path[1:] if self.path.startswith('/') else self.path
+            # 移除前导斜杠和查询参数
+            file_path = self.path.split('?')[0]
+            file_path = file_path[1:] if file_path.startswith('/') else file_path
             
             # 默认文件
             if file_path == '':
