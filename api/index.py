@@ -3,15 +3,26 @@ import sys
 import os
 import time
 import logging
-import pickle
 import numpy as np
 from collections import Counter
 
 # 确保可以导入python目录中的模块
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'python')))
 
-from zodiac_ml_predictor import load_model, predict_next
-import pandas as pd
+# 导入规则分析器
+from zodiac_rule_analyzer import analyze, predict_next as predict_next_rule, convert_history_data
+
+# 尝试导入机器学习预测器（可选）
+try:
+    from zodiac_ml_predictor import load_model, predict_next
+    has_ml_model = True
+    import pandas as pd
+except ImportError:
+    has_ml_model = False
+    load_model = None
+    predict_next = None
+    pd = None
+    logging.warning("机器学习模型依赖未安装，ML预测功能将不可用")
 
 # 配置日志
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -79,10 +90,15 @@ def load_model_once():
     global model
     if model is None:
         try:
+            # 尝试导入sklearn
+            from sklearn.ensemble import RandomForestClassifier
             # 模型文件路径
             model_path = os.path.join(os.path.dirname(__file__), '..', 'python', 'zodiac_model.pkl')
             model = load_model(model_path)
             logger.info("模型加载成功")
+        except ImportError:
+            logger.warning("sklearn未安装，机器学习模型功能将不可用")
+            model = None
         except Exception as e:
             logger.error(f"模型加载失败: {str(e)}")
             model = None
@@ -99,6 +115,8 @@ def get_history_data():
     # 读取历史数据
     data_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'lottery_history.csv')
     try:
+        if pd is None:
+            return None
         df = pd.read_csv(data_path)
         # 更新缓存
         cached_data = df
@@ -255,6 +273,10 @@ def health():
 def predict():
     """预测下一期生肖 - 旧格式"""
     try:
+        # 检查是否有机器学习模型
+        if not has_ml_model:
+            return jsonify({'error': '机器学习模型依赖未安装'}), 500
+        
         # 加载模型
         load_model_once()
         if model is None:
@@ -381,6 +403,10 @@ def ml_api_zodiac_mapping():
 def ml_api_predict():
     """预测下一期生肖 - ml-api格式"""
     try:
+        # 检查是否有机器学习模型
+        if not has_ml_model:
+            return jsonify({"error": "机器学习模型依赖未安装"})
+        
         # 加载模型
         load_model_once()
         if model is None:
@@ -446,6 +472,77 @@ def ml_api_predict():
         
     except Exception as e:
         print(f"ML预测失败: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": f"预测过程中发生错误: {str(e)}"})
+
+@app.route('/ml-api/api/rule-predict', methods=['POST'])
+def ml_api_rule_predict():
+    """基于规则的预测下一期生肖 - ml-api格式"""
+    try:
+        # 获取请求数据
+        data = request.get_json()
+        history_data = data.get('history', [])
+        
+        # 检查数据量
+        if len(history_data) < 1:
+            # 数据量不足，使用本地数据
+            df = get_history_data()
+            if df is None or len(df) < 1:
+                return jsonify({"error": "历史数据不足"})
+            
+            # 转换DataFrame为history_data格式
+            history_data = []
+            for _, row in df.iterrows():
+                history_data.append({
+                    'period': int(row['period']),
+                    'zodiac': ZODIAC_CONFIG['id_to_name'].get(int(row['zodiac']), '鼠'),
+                    'number': 0  # 本地数据没有号码信息，设为0
+                })
+        
+        # 转换历史数据格式
+        converted_history = convert_history_data(history_data)
+        
+        # 执行基于规则的分析
+        stats = analyze(converted_history, current_year=2026)
+        prediction = predict_next_rule(stats)
+        
+        # 格式化结果
+        results = []
+        for zodiac, score in prediction['top_zodiacs']:
+            # 反向查找生肖ID
+            zodiac_id = None
+            for id_num, name in ZODIAC_CONFIG['id_to_name'].items():
+                if name == zodiac:
+                    zodiac_id = id_num
+                    break
+            
+            if zodiac_id:
+                results.append({
+                    "id": zodiac_id,
+                    "name": zodiac,
+                    "element": ZODIAC_CONFIG['zodiac_to_element'].get(zodiac, ''),
+                    "color": ZODIAC_CONFIG['zodiac_to_color'].get(zodiac, ''),
+                    "score": round(score, 4),
+                    "numbers": stats['allocation'].get(zodiac, [])
+                })
+        
+        return jsonify({
+            "success": True,
+            "prediction": {
+                "top_zodiacs": results,
+                "suggest_wuxing": prediction['suggest_wuxing'],
+                "stats": {
+                    "total": stats['total'],
+                    "freq": stats['freq'],
+                    "missing": stats['missing'],
+                    "wuxing": stats['wuxing']
+                }
+            }
+        })
+        
+    except Exception as e:
+        print(f"规则预测失败: {str(e)}")
         import traceback
         traceback.print_exc()
         return jsonify({"error": f"预测过程中发生错误: {str(e)}"})
