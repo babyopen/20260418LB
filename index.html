@@ -6152,7 +6152,7 @@ const Business = {
       
       // 调用ML API
       console.log('开始调用ML API...');
-      const apiUrl = 'http://localhost:8000/api/predict';
+      const apiUrl = '/api/predict';
       console.log('API URL:', apiUrl);
       console.log('发送的历史数据:', formattedHistory);
       
@@ -6161,8 +6161,7 @@ const Business = {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({history: formattedHistory}),
-        mode: 'cors'  // 明确指定CORS模式
+        body: JSON.stringify({history: formattedHistory})
       });
       
       console.log('API响应状态:', response.status, response.statusText);
