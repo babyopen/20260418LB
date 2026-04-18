@@ -789,7 +789,10 @@
               <!-- ML预测结果区域 -->
               <div id="mlPredictionResult" style="display:none;margin-bottom:15px;padding:15px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);border-radius:8px;color:white;">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-                  <span style="font-weight:bold;font-size:16px;">🤖 ML模型预测结果</span>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <span style="font-weight:bold;font-size:16px;">🤖 ML模型预测结果</span>
+                    <span id="mlPredictionPeriod" style="font-size:14px;background:rgba(255,255,255,0.2);padding:2px 8px;border-radius:10px;"></span>
+                  </div>
                   <span id="mlPredictionTime" style="font-size:12px;opacity:0.8;"></span>
                 </div>
                 <div id="mlPredictionContent"></div>
@@ -6211,11 +6214,34 @@ const Business = {
     const resultContainer = document.getElementById('mlPredictionResult');
     const contentContainer = document.getElementById('mlPredictionContent');
     const timeContainer = document.getElementById('mlPredictionTime');
+    const periodContainer = document.getElementById('mlPredictionPeriod');
     
     if(!resultContainer || !contentContainer) return;
     
     // 显示容器
     resultContainer.style.display = 'block';
+    
+    // 计算下一期期号
+    let nextPeriod = '2026108'; // 默认值
+    try {
+      const state = StateManager._state;
+      if(state && state.analysis && state.analysis.historyData && state.analysis.historyData.length > 0) {
+        const lastItem = state.analysis.historyData[0];
+        if(lastItem.expect) {
+          const lastPeriod = parseInt(lastItem.expect);
+          if(!isNaN(lastPeriod)) {
+            nextPeriod = (lastPeriod + 1).toString();
+          }
+        }
+      }
+    } catch(e) {
+      console.error('计算期号失败:', e);
+    }
+    
+    // 更新期号
+    if(periodContainer) {
+      periodContainer.textContent = `第${nextPeriod}期`;
+    }
     
     // 更新时间
     const now = new Date();
