@@ -454,8 +454,9 @@ def ml_api_predict():
 cached_frontend_files = {}
 
 @app.route('/', methods=['GET'])
+@app.route('/index.html', methods=['GET'])
 def index():
-    """根路径，返回前端页面"""
+    """根路径和index.html，返回前端页面"""
     try:
         # 检查缓存
         if 'index.html' in cached_frontend_files:
