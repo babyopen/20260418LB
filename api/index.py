@@ -493,6 +493,26 @@ def style_css():
         logger.error(f"读取样式文件失败: {str(e)}")
         return jsonify({'error': '无法加载样式文件'}), 500
 
+@app.route('/notepad', methods=['GET'])
+def notepad():
+    """返回记事本应用页面"""
+    try:
+        # 检查缓存
+        if 'notepad.html' in cached_frontend_files:
+            return cached_frontend_files['notepad.html']
+        
+        # 读取根目录下的notepad.html文件
+        html_path = os.path.join(os.path.dirname(__file__), '..', 'notepad.html')
+        with open(html_path, 'r', encoding='utf-8') as f:
+            html_content = f.read()
+        
+        # 缓存文件内容
+        cached_frontend_files['notepad.html'] = html_content
+        return html_content
+    except Exception as e:
+        logger.error(f"读取记事本文件失败: {str(e)}")
+        return jsonify({'error': '无法加载记事本页面'}), 500
+
 # 应用入口点
 if __name__ == '__main__':
     app.run(debug=False, host='0.0.0.0', port=8000)
