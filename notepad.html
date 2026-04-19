@@ -42,9 +42,26 @@ body.dark .tab{background:#2a2a2a;color:#eee}
 .toolbar{
   display:flex;flex-wrap:wrap;gap:6px;padding:10px 12px;
   background:#fff;border-bottom:1px solid #e8e8ed;
+  transition:all .3s ease;
 }
 body.dark .toolbar{background:#1e1e1e;border-color:#333}
 body.warm .toolbar{background:#fff5d7;border-color:#f5e6c6}
+.toolbar.collapsed{
+  padding:5px 12px;
+  height:40px;
+  overflow:hidden;
+}
+.toolbar.collapsed::after{
+  content:'点击展开工具栏';
+  position:absolute;
+  right:12px;
+  top:10px;
+  font-size:12px;
+  color:#888;
+  cursor:pointer;
+}
+body.dark .toolbar.collapsed::after{color:#999}
+body.warm .toolbar.collapsed::after{color:#777}
 
 .toolbar button{
   padding:6px 10px;border-radius:10px;
@@ -91,7 +108,8 @@ body.dark .qr-box{background:#1e1e1e}
   <button class="add-tab" onclick="addTab()">+</button>
 </div>
 
-<div class="toolbar">
+<div class="toolbar" id="toolbar">
+  <button onclick="toggleToolbar()">折叠</button>
   <button onclick="newFile()">新建</button>
   <button onclick="openFile()">打开TXT</button>
   <button onclick="saveFile()">保存</button>
@@ -289,6 +307,18 @@ function showHistory(){
 
 // 自动保存
 function autoSaveLoop(){ setInterval(saveTab, 30000) }
+
+// 工具栏折叠
+function toggleToolbar(){
+  const toolbar = document.getElementById('toolbar');
+  const toggleBtn = toolbar.querySelector('button:first-child');
+  toolbar.classList.toggle('collapsed');
+  if(toolbar.classList.contains('collapsed')){
+    toggleBtn.textContent = '展开';
+  } else {
+    toggleBtn.textContent = '折叠';
+  }
+}
 
 // 拖放
 window.addEventListener('dragover', e => e.preventDefault());
