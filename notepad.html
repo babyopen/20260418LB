@@ -3,102 +3,64 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Text 全能记事本</title>
+<title>全能记事本 · 纯净版</title>
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif}
-html,body{height:100%;background:#f7f8fa;color:#222}
+*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+html,body{height:100%;background:#f8f9fa;color:#1f2937}
 body{display:flex;flex-direction:column}
+:root{--scroll:#c1c1c1;--bg:#fff;--fg:#1f2937;--bar:#f1f3f5;--border:#e5e7eb}
+body.dark{--scroll:#555;--bg:#121212;--fg:#eee;--bar:#1e1e1e;--border:#333}
+body.warm{--scroll:#d4b888;--bg:#fff9e6;--fg:#3b2e1a;--bar:#fff5d7;--border:#f5e6c6}
+body{background:var(--bg);color:var(--fg)}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-thumb{background:var(--scroll);border-radius:3px}
+::-webkit-scrolltrack{background:transparent}
 
-/* 深色 / 护眼 */
-body.dark{background:#121212;color:#eee}
-body.warm{background:#fff9e6;color:#333}
-
-/* 标签栏 */
-.tabbar{
-  display:flex;gap:8px;padding:10px 12px;
-  background:#fff;border-bottom:1px solid #e8e8ed;
-}
-body.dark .tabbar{background:#1e1e1e;border-color:#333}
-body.warm .tabbar{background:#fff5d7;border-color:#f5e6c6}
-
-.tab{
-  padding:6px 12px;border-radius:12px;
-  background:#f1f3f5;color:#333;
-  cursor:pointer;white-space:nowrap;
-  transition:.2s;
-}
-body.dark .tab{background:#2a2a2a;color:#eee}
+.tabbar{display:flex;gap:8px;padding:10px 12px;background:var(--bar);border-bottom:1px solid var(--border)}
+.tab{padding:6px 12px;border-radius:12px;background:color-mix(in srgb,var(--fg)10%,transparent);cursor:pointer;white-space:nowrap}
 .tab.active{background:#007bff;color:#fff}
+.add-tab{width:32px;height:32px;border-radius:50%;border:none;background:#007bff;color:#fff;font-size:16px;cursor:pointer}
 
-.add-tab{
-  width:32px;height:32px;border-radius:50%;
-  border:none;background:#007bff;color:#fff;
-  font-size:16px;cursor:pointer;
-}
-
-/* 工具栏 */
-.toolbar{
-  display:flex;flex-wrap:wrap;gap:6px;padding:10px 12px;
-  background:#fff;border-bottom:1px solid #e8e8ed;
-  transition:all .3s ease;
-}
-body.dark .toolbar{background:#1e1e1e;border-color:#333}
-body.warm .toolbar{background:#fff5d7;border-color:#f5e6c6}
-.toolbar.collapsed{
-  padding:5px 12px;
-  height:40px;
-  overflow:hidden;
-}
-.toolbar.collapsed::after{
-  content:'点击展开工具栏';
-  position:absolute;
-  right:12px;
-  top:10px;
-  font-size:12px;
-  color:#888;
-  cursor:pointer;
-}
-body.dark .toolbar.collapsed::after{color:#999}
-body.warm .toolbar.collapsed::after{color:#777}
-
-.toolbar button{
-  padding:6px 10px;border-radius:10px;
-  border:none;background:#f1f3f5;color:#222;
-  font-size:13px;cursor:pointer;
-  transition:.2s;
-}
-body.dark .toolbar button{background:#2a2a2a;color:#eee}
+/* 极简工具栏 */
+.toolbar{display:flex;gap:8px;padding:10px 12px;background:var(--bar);border-bottom:1px solid var(--border)}
+.toolbar button{padding:8px 12px;border-radius:10px;border:none;background:var(--bar);color:var(--fg);font-size:14px;cursor:pointer;border:1px solid var(--border)}
 .toolbar button:hover{background:#007bff;color:#fff}
 
-/* 统计栏 */
-.statbar{
-  padding:8px 14px;font-size:12px;color:#888;
-  background:#fff;border-bottom:1px solid #e8e8ed;
-}
-body.dark .statbar{background:#1e1e1e;color:#999;border-color:#333}
-body.warm .statbar{background:#fff5d7;color:#777;border-color:#f5e6c6}
+.statbar{padding:8px 14px;font-size:12px;color:#888;background:var(--bar);border-bottom:1px solid var(--border)}
+.editor-wrap{display:flex;flex:1;overflow:hidden}
+.line-num{width:50px;padding:10px 4px;text-align:right;font-size:14px;color:#999;user-select:none;background:color-mix(in srgb,var(--fg)5%,transparent)}
+.editor{flex:1;padding:20px;border:none;outline:none;resize:none;font-size:16px;line-height:1.8;background:var(--bg);color:var(--fg)}
+.editor-mono{font-family:Menlo,Consolas,monospace}
+.editor-round{font-family:"PingFang SC","Microsoft YaHei",sans-serif}
 
-/* 编辑区 */
-.editor{
-  flex:1;width:100%;padding:16px;
-  border:none;outline:none;resize:none;
-  font-size:16px;line-height:1.7;
-  background:#fff;color:#222;
+/* 弹窗样式 */
+.popup{
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  background:var(--bg);border:1px solid var(--border);border-radius:12px;
+  padding:16px;box-shadow:0 4px 20px rgba(0,0,0,0.1);z-index:999;
+  display:none;flex-direction:column;gap:8px;width:220px
 }
-body.dark .editor{background:#121212;color:#eee}
-body.warm .editor{background:#fff9e6;color:#222}
+.popup.show{display:flex}
+.popup button{padding:8px;border-radius:8px;border:none;cursor:pointer}
+.popup button:hover{background:#007bff;color:#fff}
 
-/* 二维码弹窗 */
-.qr-box{
-  position:fixed;right:16px;bottom:16px;
-  background:#fff;padding:12px;border-radius:14px;
-  box-shadow:0 4px 20px #0002;display:none;
-}
-body.dark .qr-box{background:#1e1e1e}
+/* 高亮颜色 */
+mark.h-yellow{background:#fff300;color:#000;padding:0 2px}
+mark.h-pink{background:#ff7eb9;color:#fff;padding:0 2px}
+mark.h-green{background:#69f0ae;color:#000;padding:0 2px}
+mark.h-blue{background:#40c4ff;color:#fff;padding:0 2px}
 
+.toast{position:fixed;top:10px;left:50%;transform:translateX(-50%);padding:8px 16px;border-radius:10px;background:#1e1e1e;color:#fff;opacity:0;transition:.3s;pointer-events:none}
+.toast.show{opacity:1;top:20px}
+.qr-box{position:fixed;right:16px;bottom:16px;background:var(--bar);padding:12px;border-radius:14px;box-shadow:0 4px 20px rgba(0,0,0,0.1);display:none}
+body.focus .toolbar,body.focus .tabbar,body.focus .statbar{opacity:0.1}
+body.focus:hover *{opacity:1 !important}
 #fileInput{display:none}
+.folded-line{color:#007bff;font-weight:600;cursor:pointer}
+.folded-content{display:none}
 </style>
 </head>
 
@@ -108,232 +70,295 @@ body.dark .qr-box{background:#1e1e1e}
   <button class="add-tab" onclick="addTab()">+</button>
 </div>
 
-<div class="toolbar" id="toolbar">
-  <button onclick="toggleToolbar()">折叠</button>
-  <button onclick="newFile()">新建</button>
-  <button onclick="openFile()">打开TXT</button>
-  <button onclick="saveFile()">保存</button>
-  <button onclick="toggleDark()">深色</button>
-  <button onclick="toggleWarm()">护眼</button>
-  <button onclick="insertTime()">插入时间</button>
-  <button onclick="copyText()">复制全文</button>
-  <button onclick="toggleFullscreen()">全屏</button>
-  <button onclick="fontSize(1)">A+</button>
-  <button onclick="fontSize(-1)">A-</button>
-  <button onclick="toUpper()">转大写</button>
-  <button onclick="toLower()">转小写</button>
-  <button onclick="trimLines()">去空行</button>
-  <button onclick="uniqueLines()">去重行</button>
-  <button onclick="reverseLines()">逆序</button>
-  <button onclick="exportPDF()">导出PDF</button>
-  <button onclick="makeQR()">二维码</button>
-  <button onclick="speakText()">朗读</button>
-  <button onclick="focusMode()">专注模式</button>
-  <button onclick="typeSound()">打字音效</button>
-  <button onclick="backupAll()">备份</button>
-  <button onclick="restoreAll()">恢复</button>
-  <button onclick="showHistory()">历史回滚</button>
+<!-- 最终极简工具栏：只留3个按钮 -->
+<div class="toolbar">
+  <button onclick="toggleFilePopup()">📄 文件</button>
+  <button onclick="toggleFormatPopup()">🎨 格式</button>
+  <button onclick="toggleToolPopup()">🔧 工具</button>
+  <button onclick="toggleHighlightPopup()">✍️ 高亮</button>
+  <button onclick="toggleExportPopup()">📤 导出</button>
+  <button onclick="toggleBackupPopup()">🛡️ 备份</button>
 </div>
 
-<div class="statbar" id="stat">总字符：0 | 中文：0 | 英文：0 | 行数：0</div>
+<!-- 📄 文件弹窗 -->
+<div class="popup" id="filePopup">
+  <button onclick="newFile()">新建文档</button>
+  <button onclick="openFile()">打开 TXT</button>
+  <button onclick="saveFile()">保存文件</button>
+  <button onclick="renderFoldable()">折叠模式</button>
+  <button onclick="toggleLineNum()">显示行号</button>
+  <button onclick="genToc()">生成目录</button>
+  <button onclick="insertSplit()">插入分割线</button>
+  <button onclick="insertTemplate()">插入模板</button>
+  <button onclick="closeAllPopups()">关闭</button>
+</div>
 
-<textarea class="editor" id="editor" placeholder="开始输入内容…"></textarea>
+<!-- 🎨 格式弹窗 -->
+<div class="popup" id="formatPopup">
+  <button onclick="toggleDark()">深色 / 浅色</button>
+  <button onclick="toggleWarm()">护眼暖黄</button>
+  <button onclick="switchFont()">切换字体</button>
+  <button onclick="fontSize(1)">增大字号</button>
+  <button onclick="fontSize(-1)">减小字号</button>
+  <button onclick="smartFormat()">智能排版</button>
+  <button onclick="convertLang()">简繁转换</button>
+  <button onclick="trimLines()">删除多余空行</button>
+  <button onclick="closeAllPopups()">关闭</button>
+</div>
+
+<!-- 🔧 工具弹窗 -->
+<div class="popup" id="toolPopup">
+  <button onclick="findText()">查找文字</button>
+  <button onclick="replaceText()">替换文字</button>
+  <button onclick="insertTime()">插入当前时间</button>
+  <button onclick="copyText()">复制全文</button>
+  <button onclick="toggleFullscreen()">全屏模式</button>
+  <button onclick="focusMode()">专注模式</button>
+  <button onclick="tomatoTimer()">番茄钟 25 分钟</button>
+  <button onclick="closeAllPopups()">关闭</button>
+</div>
+
+<!-- ✍️ 高亮弹窗 -->
+<div class="popup" id="hlPopup">
+  <button style="background:#fff300;color:#000" onclick="pickColor('yellow')">黄色高亮</button>
+  <button style="background:#ff7eb9;color:#fff" onclick="pickColor('pink')">粉色高亮</button>
+  <button style="background:#69f0ae;color:#000" onclick="pickColor('green')">绿色高亮</button>
+  <button style="background:#40c4ff;color:#fff" onclick="pickColor('blue')">蓝色高亮</button>
+  <button onclick="searchHighlight()">关键词高亮</button>
+  <button onclick="clearHighlights()">清除全部高亮</button>
+  <button onclick="closeAllPopups()">关闭</button>
+</div>
+
+<!-- 📤 导出弹窗 -->
+<div class="popup" id="exportPopup">
+  <button onclick="exportPDF()">导出 PDF</button>
+  <button onclick="exportImage()">导出长图</button>
+  <button onclick="makeQR()">生成二维码</button>
+  <button onclick="speakText()">朗读内容</button>
+  <button onclick="closeAllPopups()">关闭</button>
+</div>
+
+<!-- 🛡️ 备份弹窗 -->
+<div class="popup" id="backupPopup">
+  <button onclick="backupAll()">备份全部数据</button>
+  <button onclick="restoreAll()">从备份恢复</button>
+  <button onclick="showHistory()">回滚上一版本</button>
+  <button onclick="clearStorage()">清空所有数据</button>
+  <button onclick="closeAllPopups()">关闭</button>
+</div>
+
+<div class="statbar" id="stat">总：0 字｜中：0 字｜英：0 字｜行：0</div>
+
+<div class="editor-wrap">
+  <div class="line-num" id="lineNum" style="display:none"></div>
+  <textarea class="editor" id="editor" placeholder="开始输入…"></textarea>
+</div>
+
+<div id="displayArea" style="flex:1;overflow:auto;padding:20px;white-space:pre-wrap;line-height:1.8;display:none"></div>
+<div class="toast" id="toast"></div>
 <div class="qr-box" id="qrBox"><div id="qrcode"></div></div>
 <input type="file" id="fileInput" accept=".txt">
 
 <script>
 const editor = document.getElementById('editor');
+const displayArea = document.getElementById('displayArea');
+const lineNum = document.getElementById('lineNum');
 const stat = document.getElementById('stat');
-let tabs = {1:''};
-let currentTab = 1;
-let tabId = 1;
-let history = [];
-let sound = false;
+const toast = document.getElementById('toast');
 
-window.onload = () => {
-  loadTab(currentTab);
-  autoSaveLoop();
-  recordHistory();
+// 所有弹窗
+const filePopup = document.getElementById('filePopup');
+const formatPopup = document.getElementById('formatPopup');
+const toolPopup = document.getElementById('toolPopup');
+const hlPopup = document.getElementById('hlPopup');
+const exportPopup = document.getElementById('exportPopup');
+const backupPopup = document.getElementById('backupPopup');
+
+let tabs = {1:''}, currentTab=1, tabId=1, history=[], fontMode=0;
+let showLineNum = false, isViewMode = false, currentColor = 'yellow';
+
+window.onload = () => { loadTab(currentTab); autoSaveLoop(); recordHistory(); setInterval(updateStat, 500); }
+function showToast(msg){ toast.textContent=msg; toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'),1200); }
+
+// 关闭所有弹窗
+function closeAllPopups(){
+  filePopup.classList.remove('show');
+  formatPopup.classList.remove('show');
+  toolPopup.classList.remove('show');
+  hlPopup.classList.remove('show');
+  exportPopup.classList.remove('show');
+  backupPopup.classList.remove('show');
 }
 
-editor.oninput = () => {
-  tabs[currentTab] = editor.value;
-  saveTab();
-  updateStat();
-  recordHistory();
-  if(sound){
-    let audio = new Audio('https://cdn.jsdelivr.net/gh/ashisha7up/keyboard-sounds/click1.mp3');
-    audio.play().catch(()=>{});
-  }
-}
+// 弹窗开关
+function toggleFilePopup(){closeAllPopups();filePopup.classList.toggle('show')}
+function toggleFormatPopup(){closeAllPopups();formatPopup.classList.toggle('show')}
+function toggleToolPopup(){closeAllPopups();toolPopup.classList.toggle('show')}
+function toggleHighlightPopup(){closeAllPopups();hlPopup.classList.toggle('show')}
+function toggleExportPopup(){closeAllPopups();exportPopup.classList.toggle('show')}
+function toggleBackupPopup(){closeAllPopups();backupPopup.classList.toggle('show')}
 
 // 统计
 function updateStat(){
-  let v = editor.value;
-  let total = v.length;
-  let cn = (v.match(/[\u4e00-\u9fa5]/g) || []).length;
-  let en = (v.match(/[a-zA-Z]/g) || []).length;
-  let lines = v.split('\n').length;
-  stat.textContent = `总字符：${total} | 中文：${cn} | 英文：${en} | 行数：${lines}`;
+  let v=editor.value, total=v.length;
+  let cn=(v.match(/[\u4e00-\u9fa5]/g)||[]).length;
+  let en=(v.match(/[a-zA-Z]/g)||[]).length;
+  let lines=v.split('\n').length;
+  stat.textContent=`总：${total} 字｜中：${cn} 字｜英：${en} 字｜行：${lines}`;
+  if(showLineNum) renderLineNum();
 }
 
-// 标签
-function saveTab(){ localStorage.setItem('tabs', JSON.stringify(tabs)) }
-function loadTab(id){ editor.value = tabs[id] || ''; updateStat() }
+editor.oninput = () => { tabs[currentTab] = editor.value; saveTab(); recordHistory(); }
+function saveTab(){localStorage.setItem('tabs',JSON.stringify(tabs))}
+function loadTab(id){editor.value=tabs[id]||'';updateStat()}
 
+// 多标签
 function addTab(){
-  tabId++;
-  tabs[tabId] = '';
-  let el = document.createElement('div');
-  el.className = 'tab';
-  el.dataset.id = tabId;
-  el.textContent = '文档 ' + tabId;
-  el.onclick = () => {
-    currentTab = tabId;
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    el.classList.add('active');
-    loadTab(tabId);
-  }
+  tabId++; tabs[tabId]='';
+  let el=document.createElement('div'); el.className='tab'; el.textContent='文档 '+tabId;
+  el.onclick=()=>{ currentTab=tabId; document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); el.classList.add('active'); loadTab(tabId); }
   document.getElementById('tabbar').insertBefore(el, document.querySelector('.add-tab'));
 }
 
-// 文件
-function newFile(){ editor.value = ''; tabs[currentTab] = ''; saveTab(); updateStat() }
-
+// ==============================================
+// 📄 文件功能
+// ==============================================
+function newFile(){editor.value='';tabs[currentTab]='';saveTab();updateStat();showToast('已新建')}
 function saveFile(){
-  let blob = new Blob([editor.value], {type:'text/plain'});
-  let a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'note.txt';
-  a.click();
+  let blob=new Blob([editor.value],{type:'text/plain'});
+  let a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='note.txt';a.click();showToast('已保存');
+}
+function openFile(){document.getElementById('fileInput').click()}
+document.getElementById('fileInput').onchange=e=>{
+  let f=e.target.files[0];if(!f)return;
+  let r=new FileReader();r.readAsText(f,'UTF-8');
+  r.onload=()=>{editor.value=r.result;tabs[currentTab]=editor.value;saveTab();updateStat();showToast('已打开')}
+}
+function toggleLineNum(){showLineNum=!showLineNum;lineNum.style.display=showLineNum?'block':'none';renderLineNum();showToast(showLineNum?'显示行号':'隐藏行号')}
+function renderLineNum(){let lines=editor.value.split('\n').length;lineNum.innerHTML=Array.from({length:lines},(_,i)=>`<div>${i+1}</div>`).join('')}
+function genToc(){
+  let lines=editor.value.split('\n');
+  let toc='【目录】\n';
+  for(let line of lines)if(/^#{1,6}\s/.test(line.trimStart()))toc+=line+'\n';
+  editor.value=toc+'\n'+editor.value;tabs[currentTab]=editor.value;saveTab();updateStat();showToast('目录已生成')
+}
+function insertSplit(){editor.value+='\n---\n';tabs[currentTab]=editor.value;saveTab();updateStat()}
+function insertTemplate(){
+  let list=[
+    '【待办清单】\n1. \n2. \n3. \n',
+    '【日记】\n日期：'+new Date().toLocaleDateString()+'\n心情：\n内容：\n',
+    '【会议记录】\n时间：\n参会：\n内容：\n结论：\n',
+    '【读书笔记】\n书名：\n作者：\n摘抄：\n感悟：\n',
+    '【工作总结】\n今日完成：\n问题：\n明日计划：\n'
+  ];
+  editor.value+=list[Math.floor(Math.random()*list.length)];
+  tabs[currentTab]=editor.value;saveTab();updateStat();showToast('已插入模板')
 }
 
-function openFile(){ document.getElementById('fileInput').click() }
-document.getElementById('fileInput').onchange = e => {
-  let f = e.target.files[0];
-  if(!f) return;
-  let r = new FileReader();
-  r.readAsText(f, 'UTF-8');
-  r.onload = () => {
-    editor.value = r.result;
-    tabs[currentTab] = editor.value;
-    saveTab();
-    updateStat();
-  }
+// ==============================================
+// 🎨 格式功能
+// ==============================================
+function toggleDark(){document.body.classList.toggle('dark');showToast(document.body.classList.contains('dark')?'深色模式':'标准模式')}
+function toggleWarm(){document.body.classList.toggle('warm');showToast(document.body.classList.contains('warm')?'护眼模式':'标准模式')}
+function switchFont(){
+  fontMode=(fontMode+1)%3;editor.className='editor';
+  if(fontMode===1)editor.classList.add('editor-mono');
+  if(fontMode===2)editor.classList.add('editor-round');
+  showToast(['常规','等宽','圆体'][fontMode]);
+}
+function fontSize(d){let s=parseInt(getComputedStyle(editor).fontSize);editor.style.fontSize=(s+d*2)+'px';showToast('字号已调整')}
+function smartFormat(){
+  let t=editor.value.replace(/ +/g,' ').replace(/\n+/g,'\n').trim();
+  t=t.replace(/([\u4e00-\u9fa5])([a-zA-Z])/g,'$1 $2');
+  t=t.replace(/([a-zA-Z])([\u4e00-\u9fa5])/g,'$1 $2');
+  editor.value=t;tabs[currentTab]=t;saveTab();updateStat();showToast('智能排版完成')
+}
+function convertLang(){
+  let jt={'后':'後','里':'裡','面':'麵','这':'這','个':'個','们':'們','为':'為','会':'會','体':'體','东':'東','车':'車','发':'發','动':'動','国':'國','图':'圖','实':'實','业':'業','乐':'樂','无':'無'};
+  let s='';for(let c of editor.value)s+=jt[c]||c;editor.value=s;tabs[currentTab]=s;saveTab();showToast('转换完成')
+}
+function trimLines(){editor.value=editor.value.split('\n').filter(i=>i.trim()).join('\n');tabs[currentTab]=editor.value;saveTab();updateStat();showToast('已删除多余空行')}
+
+// ==============================================
+// 🔧 工具功能
+// ==============================================
+function insertTime(){editor.value+=new Date().toLocaleString()+'\n';tabs[currentTab]=editor.value;saveTab();updateStat()}
+function copyText(){editor.select();document.execCommand('copy');showToast('已复制')}
+function toggleFullscreen(){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+function findText(){let key=prompt('查找：');if(!key)return;let pos=editor.value.indexOf(key);if(pos===-1)return showToast('未找到');editor.focus();editor.setSelectionRange(pos,pos+key.length)}
+function replaceText(){let f=prompt('查找：');if(!f)return;let r=prompt('替换为：');editor.value=editor.value.split(f).join(r);tabs[currentTab]=editor.value;saveTab();updateStat();showToast('已替换')}
+function focusMode(){document.body.classList.toggle('focus');showToast(document.body.classList.contains('focus')?'专注模式':'已退出')}
+function tomatoTimer(){
+  showToast('番茄钟 25 分钟已启动');
+  setTimeout(()=>{new Audio('https://cdn.jsdelivr.net/gh/ashisha7up/keyboard-sounds/click1.mp3').play();alert('时间到！休息一下～')},25*60*1000);
 }
 
-// 主题
-function toggleDark(){ document.body.classList.toggle('dark') }
-function toggleWarm(){ document.body.classList.toggle('warm') }
-
-// 工具
-function insertTime(){ editor.value += new Date().toLocaleString() + '\n'; tabs[currentTab] = editor.value; saveTab(); updateStat() }
-function copyText(){ editor.select(); document.execCommand('copy'); alert('已复制全文') }
-function toggleFullscreen(){ document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen() }
-function fontSize(d){
-  let sz = parseInt(getComputedStyle(editor).fontSize);
-  editor.style.fontSize = (sz + d * 2) + 'px';
+// ==============================================
+// ✍️ 高亮功能
+// ==============================================
+function pickColor(color){currentColor=color;highlightSelection(color);closeAllPopups()}
+function highlightSelection(color){
+  const sel=window.getSelection();if(!sel.rangeCount||sel.isCollapsed)return showToast('请先选择文字');
+  const r=sel.getRangeAt(0);const s=r.startOffset,e=r.endOffset;const t=editor.value;
+  editor.value=t.slice(0,s)+`[h:${color}]${t.substring(s,e)}[/h]`+t.slice(e);
+  tabs[currentTab]=editor.value;saveTab();updateStat();showToast('已高亮');
 }
-function toUpper(){ editor.value = editor.value.toUpperCase(); tabs[currentTab] = editor.value; saveTab() }
-function toLower(){ editor.value = editor.value.toLowerCase(); tabs[currentTab] = editor.value; saveTab() }
-function trimLines(){ editor.value = editor.value.split('\n').filter(l => l.trim()).join('\n'); tabs[currentTab] = editor.value; saveTab(); updateStat() }
-function uniqueLines(){ editor.value = [...new Set(editor.value.split('\n'))].join('\n'); tabs[currentTab] = editor.value; saveTab(); updateStat() }
-function reverseLines(){ editor.value = editor.value.split('\n').reverse().join('\n'); tabs[currentTab] = editor.value; saveTab() }
-
-// 导出
-function exportPDF(){
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  doc.text(editor.value, 10, 10);
-  doc.save('记事本.pdf');
+function searchHighlight(){
+  const kw=prompt('关键词：');if(!kw)return;
+  editor.value=editor.value.replace(/\[h:\w+\]|\[\/h\]/g,'');
+  const reg=new RegExp(kw.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi');
+  editor.value=editor.value.replace(reg,m=>`[h:${currentColor}]${m}[/h]`);
+  tabs[currentTab]=editor.value;saveTab();updateStat();showToast(`已高亮 "${kw}"`);closeAllPopups();
 }
+function clearHighlights(){editor.value=editor.value.replace(/\[h:\w+\]|\[\/h\]/g,'');tabs[currentTab]=editor.value;saveTab();updateStat();showToast('已清除');closeAllPopups()}
 
-function makeQR(){
-  document.getElementById('qrBox').style.display = 'block';
-  QRCode.toCanvas(document.getElementById('qrcode'), editor.value, { width:130 })
+// ==============================================
+// 📤 导出功能
+// ==============================================
+function exportPDF(){const {jsPDF}=window.jspdf;const doc=new jsPDF();doc.text(editor.value,10,10);doc.save('note.pdf');showToast('PDF 已导出')}
+async function exportImage(){
+  showToast('生成中…');
+  let wrap=document.createElement('div');wrap.style.padding='20px';wrap.style.background=getComputedStyle(document.body).backgroundColor;wrap.innerText=editor.value;
+  let data=await htmlToImage.toPng(wrap);
+  let a=document.createElement('a');a.href=data;a.download='note.png';a.click();showToast('长图已保存');
 }
+function makeQR(){document.getElementById('qrBox').style.display='block';QRCode.toCanvas(document.getElementById('qrcode'),editor.value,{width:130})}
+function speakText(){let u=new SpeechSynthesisUtterance(editor.value);u.lang='zh-CN';window.speechSynthesis.speak(u)}
 
-function speakText(){
-  let s = new SpeechSynthesisUtterance(editor.value);
-  s.lang = 'zh-CN';
-  window.speechSynthesis.speak(s);
+// ==============================================
+// 🛡️ 备份与历史
+// ==============================================
+function backupAll(){let b=new Blob([JSON.stringify(tabs)],{type:'application/json'});let a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='backup.json';a.click();showToast('已备份')}
+function restoreAll(){let i=document.createElement('input');i.type='file';i.onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.readAsText(f);r.onload=()=>{tabs=JSON.parse(r.result);saveTab();loadTab(currentTab);showToast('恢复成功')}};i.click()}
+function recordHistory(){if(history.length>30)history.shift();history.push(editor.value)}
+function showHistory(){if(history.length<2)return;editor.value=history[history.length-2];tabs[currentTab]=editor.value;saveTab();updateStat();showToast('已回滚')}
+function clearStorage(){if(!confirm('确定清空所有数据？'))return;localStorage.clear();tabs={1:''};currentTab=1;editor.value='';updateStat();showToast('已清空')}
+function autoSaveLoop(){setInterval(saveTab,30000)}
+
+// ==============================================
+// 折叠阅读模式
+// ==============================================
+function renderFoldable(){
+  isViewMode=!isViewMode;
+  if(isViewMode){editor.style.display='none';displayArea.style.display='block';displayArea.innerHTML=applyHighlightToHtml(editor.value);showToast('折叠阅读模式')}
+  else{editor.style.display='block';displayArea.style.display='none';showToast('返回编辑模式')}
 }
-
-function focusMode(){
-  document.body.classList.toggle('focus');
-}
-
-function typeSound(){ sound = !sound; alert(sound ? '打字音效已开启' : '打字音效已关闭') }
-
-// 备份
-function backupAll(){
-  let blob = new Blob([JSON.stringify(tabs)], {type:'application/json'});
-  let a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = '记事本备份.json';
-  a.click();
-}
-
-function restoreAll(){
-  let inp = document.createElement('input');
-  inp.type = 'file';
-  inp.accept = '.json';
-  inp.onchange = e => {
-    let f = e.target.files[0];
-    if(!f) return;
-    let r = new FileReader();
-    r.readAsText(f);
-    r.onload = () => {
-      tabs = JSON.parse(r.result);
-      saveTab();
-      loadTab(currentTab);
-    }
-  }
-  inp.click();
+function applyHighlightToHtml(text){
+  return text.replace(/\n/g,'<br>')
+    .replace(/\[h:yellow\]/g,'<mark class="h-yellow">')
+    .replace(/\[h:pink\]/g,'<mark class="h-pink">')
+    .replace(/\[h:green\]/g,'<mark class="h-green">')
+    .replace(/\[h:blue\]/g,'<mark class="h-blue">')
+    .replace(/\[\/h\]/g,'</mark>');
 }
 
-// 历史
-function recordHistory(){
-  if(history.length > 30) history.shift();
-  history.push(editor.value);
-}
-function showHistory(){
-  if(history.length < 2) return;
-  editor.value = history[history.length - 2] || '';
-  tabs[currentTab] = editor.value;
-  saveTab();
-  updateStat();
-}
-
-// 自动保存
-function autoSaveLoop(){ setInterval(saveTab, 30000) }
-
-// 工具栏折叠
-function toggleToolbar(){
-  const toolbar = document.getElementById('toolbar');
-  const toggleBtn = toolbar.querySelector('button:first-child');
-  toolbar.classList.toggle('collapsed');
-  if(toolbar.classList.contains('collapsed')){
-    toggleBtn.textContent = '展开';
-  } else {
-    toggleBtn.textContent = '折叠';
-  }
-}
-
-// 拖放
-window.addEventListener('dragover', e => e.preventDefault());
-window.addEventListener('drop', e => {
-  e.preventDefault();
-  let f = e.dataTransfer.files[0];
-  if(!f || !f.name.endsWith('.txt')) return;
-  let r = new FileReader();
-  r.readAsText(f, 'UTF-8');
-  r.onload = () => {
-    editor.value = r.result;
-    tabs[currentTab] = editor.value;
-    saveTab();
-    updateStat();
-  }
+// 拖放打开文件
+window.addEventListener('dragover',e=>e.preventDefault());
+window.addEventListener('drop',e=>{
+  e.preventDefault();let f=e.dataTransfer.files[0];
+  if(!f||!f.name.endsWith('.txt'))return;
+  let r=new FileReader();r.readAsText(f,'UTF-8');
+  r.onload=()=>{editor.value=r.result;tabs[currentTab]=editor.value;saveTab();updateStat();showToast('已打开')};
 });
 </script>
 </body>
